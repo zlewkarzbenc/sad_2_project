@@ -203,6 +203,9 @@ class BN():
 
         plt.show()
 
+def main():
+    bn = BN(['x0','x1','x2'], ['~x1 | x2', 'x0 | ~x2', 'x0 & x2'])
+    bn.draw_state_transition_system()
 
-bn = BN(['x0','x1','x2'], ['~x1 | x2', 'x0 | ~x2', 'x0 & x2'])
-bn.draw_state_transition_system()
+if __name__ == "main":
+    main()
