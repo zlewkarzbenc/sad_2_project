@@ -231,14 +231,30 @@ class BN():
                 for state in attractor:
                     node_colors[sts_nodes.index(state)] = color
 
-        pos = nx.spring_layout(sts, seed=42)
         nx.draw_networkx(sts,
                          with_labels=True,
-                         pos=nx.spring_layout(sts),
+                         pos=nx.spring_layout(sts, seed=42),
                          node_color = node_colors,
                          font_size=8)
 
         plt.show()
+
+    def to_nx_graph(self) -> nx.DiGraph:
+        """
+        Convert the Boolean network to a NetworkX DiGraph.
+        Nodes: self.node_names
+        Edges: parent -> child if parent appears in child's Boolean function
+        """
+        G = nx.DiGraph()
+        G.add_nodes_from(self.node_names)
+
+        for idx, fun in enumerate(self.functions):
+            child = self.node_names[idx]
+            # fun.symbols gives a set of Boolean Algebra symbols used in this function
+            parents = [str(s) for s in fun.symbols]  
+            for p in parents:
+                G.add_edge(p, child)
+        return G
 
 
 # Random Boolean network generator
