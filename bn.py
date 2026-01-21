@@ -150,24 +150,24 @@ class BN():
         """
         return traj[::freq]
 
+
     @staticmethod
     def save_dataset(trajectories: List[List[Tuple[int, ...]]],
                      dir: str,
                      filename: str) -> None:
         """
-        Save trajectories in a BNFinder2-compatible CSV format.
-
-        Each row represents one transition:
-        x1(t),...,xn(t),x1(t+1),...,xn(t+1)
+        For BNFinder2, save trajectories in a CSV format.
+        Each row represents one state:
+        x1(t),...,xn(t)
         """
         os.makedirs(dir, exist_ok=True)
         path = os.path.join(dir, filename)
-        
+
         with open(path, 'w', newline='') as f:
             writer = csv.writer(f)
             for traj in trajectories:
-                for s, s_next in zip(traj[:-1], traj[1:]):
-                    writer.writerow(list(s) + list(s_next))
+                for state in traj:
+                    writer.writerow(list(state))
 
 # Random Boolean network generator
 
