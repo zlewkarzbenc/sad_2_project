@@ -1,46 +1,88 @@
+from fileinput import filename
 import os
 import subprocess
 from unittest import result
 import pandas as pd
 import re
 import csv
+import random
+from bn import *
 
 "Module for processing Boolean network trajectories and interfacing with BNFinder."
 
-def transitions_csv_to_bnf(csv_folder: str, output_folder: str) -> None:
+def trajectories_to_bnfinder_txt(trajectories, output_dir, filename) -> None:
     """
-    Convert CSV files with state transitions into BNFinder-compatible TXT files.
-    Each CSV file should have rows as time points and columns as variables.
+    Convert trajectories directly into a BNFinder-compatible TXT file,
+    skipping CSV creation.
+
     Args:
-        csv_folder: Folder containing input CSV files.
-        output_folder: Folder to save output TXT files.
+        trajectories: List of trajectories; each trajectory is a list of states.
+                      Each state is a tuple (x1, ..., xn).
+        output_dir: Directory to save the output TXT file.
+        filename: Output filename (should end with .txt).
     """
 
-    for name in os.listdir(csv_folder):
-        csv_path = os.path.join(csv_folder, name)
+    num_nodes = len(trajectories[0][0])
+    nodes = [f"X{i+1}" for i in range(num_nodes)]
 
-        os.makedirs(output_folder, exist_ok=True)
-        out_path = os.path.join(output_folder, name.replace(".csv", ".txt"))
+    # Build condition labels and per-node value streams
+    conditions = []
+    node_values = [[] for _ in range(num_nodes)]
 
-        # Loading CSV file
-        df = pd.read_csv(csv_path, dtype=str).fillna("")
-        time = df.shape[0]
-        num_nodes = df.shape[1]
-        nodes = [f"X{i+1}" for i in range(num_nodes)]
+    # Experiment conditions
+    for exp_idx, traj in enumerate(trajectories, start=1):
+        for t_idx, state in enumerate(traj, start=1):
+            conditions.append(f"s{exp_idx}:t{t_idx}")
+            for i, value in enumerate(state):
+                node_values[i].append(str(value))
 
-        experiment_list = []
-        for i in range(1, time+1):
-            experiment_list.append(f"s1:t{i}")
+    # Write to BNFinder TXT format
+    os.makedirs(output_dir, exist_ok=True)
+    out_path = os.path.join(output_dir, filename)
 
-        # Writing to BNFinder TXT format
-        with open(out_path, "w") as f:
-            f.write("#default 0 1\n")
-            f.write("conditions " + " ".join(experiment_list) + "\n")
+    with open(out_path, "w") as f:
+        f.write("#default 0 1\n")
+        f.write("conditions " + " ".join(conditions) + "\n")
 
-            for i, node in enumerate(nodes):
-                values = df.iloc[:, i].tolist() # states of i-th node
-                line = node + " " + " ".join(values) + "\n"
-                f.write(line)
+        for node, values in zip(nodes, node_values):
+            f.write(node + " " + " ".join(values) + "\n")
+
+
+def dataset_for_nets(bns, output_dir) -> None:
+    '''
+    Generate datasets for a list of Boolean networks and save them
+    in BNFinder TXT format.
+    Args:
+        bns: List of BN instances.
+        output_dir: Directory to save the output TXT files.
+    '''
+
+    for i, bn in enumerate(bns):
+        dataset = []
+        init = tuple(random.randint(0,1) for _ in range(bn.num_nodes))
+
+        num_of_traj = random.randint(1, 5)
+
+        for _ in range(num_of_traj):
+
+            # choose sync or async
+            p_sync = random.random()
+            if p_sync < 0.5:
+                mode = 'async'
+            else:
+                mode = 'sync'
+
+            # choose length of trajectory
+            num_steps = random.randint(50, 200)
+            traj = bn.simulate_trajectory(init, steps=num_steps, mode=mode)
+
+            # add trajectory (change frequency)
+            frequency_choice = random.randint(1, 5)
+            dataset.append(BN.sample_trajectory(traj, freq=frequency_choice))
+
+        trajectories_to_bnfinder_txt(dataset, output_dir, f'dataset_{i}.txt')
+
+
 
 def run_bnfinder_4_one(python2_path, bnfinder_path, input_txt, output_sif, score):
     '''
@@ -61,13 +103,14 @@ def run_bnfinder_4_one(python2_path, bnfinder_path, input_txt, output_sif, score
     ]
     
     print("Executing:", " ".join(cmd))
+    
     result = subprocess.run(cmd, capture_output=True, text=True)
     return result
 
 
 
 def run_bnfinder_and_collect(input_folder: str, output_folder: str, 
-                    python2_path, bnfinder_path, score: str, csv_filename)->None:
+                    python2_path, bnfinder_path, score: str, csv_filename: str)->None:
     '''
     Run BNFinder on all files in the input folder and collect total scores into a CSV file.
     Args:
@@ -102,8 +145,3 @@ def run_bnfinder_and_collect(input_folder: str, output_folder: str,
         writer = csv.writer(f)
         writer.writerow(["dataset", "total_score"])  # Header
         writer.writerows(total_scores)
-
-
-
-
-

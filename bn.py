@@ -4,7 +4,8 @@ import random
 import csv
 import os
 from typing import List, Tuple
-
+import matplotlib.pyplot as plt
+import matplotlib.colors as mcolors
 
 class BN():
     """
@@ -149,25 +150,96 @@ class BN():
         Down-sample a trajectory by keeping every `freq`-th state.
         """
         return traj[::freq]
+    
 
+    #-----------------------------
+    # Functions for drawing
+    #----------------------------
 
-    @staticmethod
-    def save_dataset(trajectories: List[List[Tuple[int, ...]]],
-                     dir: str,
-                     filename: str) -> None:
+    def generate_state_transition_system(self) -> nx.DiGraph:
         """
-        For BNFinder2, save trajectories in a CSV format.
-        Each row represents one state:
-        x1(t),...,xn(t)
-        """
-        os.makedirs(dir, exist_ok=True)
-        path = os.path.join(dir, filename)
+        Generates the asynchronous state transition system of the Boolean network.
 
-        with open(path, 'w', newline='') as f:
-            writer = csv.writer(f)
-            for traj in trajectories:
-                for state in traj:
-                    writer.writerow(list(state))
+            Returns:
+                nx.DiGraph: NetworkX DiGraph object representing the asynchronous state transition system.
+        """
+        
+        G = nx.DiGraph()
+
+        num_states = 2 ** self.num_nodes
+        for i in range(num_states):
+            current_state = self._int_to_state(i)
+            G.add_node(current_state)
+
+            neighbor_states = self.get_neighbor_states(current_state)
+            for neighbor in neighbor_states:
+                G.add_edge(current_state, neighbor)
+
+        return G
+
+
+    def get_attractors(self) -> list[set[tuple[int]]]:
+        
+        """
+        Computes the asynchronous attractors of the Boolean network.
+
+            Returns:
+                list[set[tuple[int]]]: A list of asynchronous attractors. Each attractor is a set of states.
+        """
+
+        sts = self.generate_state_transition_system()
+
+        attractors = []
+        for attractor in nx.attracting_components(sts):
+            attractors.append(attractor)
+
+        return attractors
+    
+
+
+    def draw_state_transition_system(self, highlight_attractors: bool = True) -> None:
+        """
+        Draws the state transition system.
+
+            Args:
+                highlight_attractors: If True, states belonging to different attractors are drawn 
+                    using distinct colors.
+
+            Returns:
+                None
+        """
+
+        # The color used for non-attractor states in the state transition system
+        NON_ATTRACTOR_STATE_COLOR = 'grey'
+
+        sts = self.generate_state_transition_system()
+
+        if highlight_attractors:
+            attractors = self.get_attractors()
+
+            sts_nodes = list(sts.nodes)
+
+            node_colors = [NON_ATTRACTOR_STATE_COLOR for node in sts_nodes]
+
+            colors = list(mcolors.CSS4_COLORS)
+            colors.remove('white')
+            colors.remove(NON_ATTRACTOR_STATE_COLOR)
+            
+            for attractor in attractors:
+                # Select a random color for coloring the states of the attractor
+                color = random.choice(colors)
+                for state in attractor:
+                    node_colors[sts_nodes.index(state)] = color
+
+        pos = nx.spring_layout(sts, seed=42)
+        nx.draw_networkx(sts,
+                         with_labels=True,
+                         pos=nx.spring_layout(sts),
+                         node_color = node_colors,
+                         font_size=8)
+
+        plt.show()
+
 
 # Random Boolean network generator
 
