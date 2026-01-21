@@ -292,6 +292,41 @@ def generate_random_bn(n: int, max_parents: int = 3) -> BN:
 
     return BN(nodes, functions)
 
+
+def load_bnet_to_BN(file_path: str) -> BN:
+    """
+    Parses a .bnet file and returns a BN object with functions converted to DNF.
+    """
+    nodes = []
+    functions = []
+    
+    algebra = bool.BooleanAlgebra()
+    
+    if not os.path.exists(file_path):
+        raise FileNotFoundError(f"The file {file_path} does not exist.")
+
+    with open(file_path, 'r') as f:
+        for line in f:
+            line = line.strip()
+            
+            # Skip empty lines and comments or header
+            if not line or line.startswith('#') or line.lower().strip() == 'targets,factors':
+                continue
+                
+            target, expression = [part.strip() for part in line.split(',', 1)]
+            
+            # Parse the expression
+            parsed_expr = algebra.parse(expression)
+            
+            # Convert to DNF
+            dnf_expr = algebra.dnf(parsed_expr)
+            
+            nodes.append(target)
+            functions.append(str(dnf_expr))
+            
+    return BN(nodes, functions)
+
+
 def main():
     print("Module with Boolean Network class implementation and helper functions (to be used via import).")
 
