@@ -1,5 +1,4 @@
-# sad_2_project
-## Course project in "Statistical data analysis 2" (2025/2026)
+# Course project in "Statistical data analysis 2" (2025/2026)
 For more information view `assignment.pdf`.
 
 ## opisać co w tym repo się znajduje i do czego służy (np. klasa)
