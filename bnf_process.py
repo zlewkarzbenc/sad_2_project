@@ -50,7 +50,8 @@ def trajectories_to_bnfinder_txt(bn, trajectories, output_dir, filename) -> None
             f.write(node + " " + " ".join(values) + "\n")
 
 
-def dataset_for_nets(bns, output_dir) -> None:
+def dataset_for_nets(bns, output_dir, num_of_traj=None,
+                    mode=None, num_steps=None, frequency_choice=None) -> None:
     '''
     Generate datasets for a list of Boolean networks and save them
     in BNFinder TXT format.
@@ -64,27 +65,29 @@ def dataset_for_nets(bns, output_dir) -> None:
     metadata = []
     for i, bn in enumerate(bns):
         dataset = []
-        init = tuple(random.randint(0,1) for _ in range(bn.num_nodes))
 
         attractors = bn.get_attractors()
 
-        num_of_traj = random.randint(1, 5)
+        if not num_of_traj: num_of_traj = random.randint(1, 5)
 
         for j in range(num_of_traj):
 
+            init = tuple(random.randint(0,1) for _ in range(bn.num_nodes))
+
             # choose sync or async
-            p_sync = random.random()
-            if p_sync < 0.5:
-                mode = 'async'
-            else:
-                mode = 'sync'
+            if not mode: 
+                p_sync = random.random()
+                if p_sync < 0.5:
+                    mode = 'async'
+                else:
+                    mode = 'sync'
 
             # choose length of trajectory
-            num_steps = random.randint(10, 100)
+            if not num_steps: num_steps = random.randint(10, 100)
             traj = bn.simulate_trajectory(init, steps=num_steps, mode=mode)
 
             # add trajectory (change frequency)
-            frequency_choice = random.randint(1, 5)
+            if not frequency_choice: frequency_choice = random.randint(1, 5)
             final_traj = BN.sample_trajectory(traj, freq=frequency_choice)
             dataset.append(final_traj)
 
@@ -251,8 +254,8 @@ def draw_compare_bn(G_true, G_pred, title):
 
 
 def compare_results(bns, BDE_path, MDL_path):
-    nx_BDE = multiple_sif_to_nx(r"./output_bnf_BDE")
-    nx_MDL = multiple_sif_to_nx(r"./output_bnf_MDL")
+    nx_BDE = multiple_sif_to_nx(BDE_path)
+    nx_MDL = multiple_sif_to_nx(MDL_path)
 
     metrics = {"SHD_BDE": [], "Jaccard_BDE": [], "Precision_BDE": [], "Recall_BDE": [], "F1_BDE": [],
             "SHD_MDL": [], "Jaccard_MDL": [], "Precision_MDL": [], "Recall_MDL": [], "F1_MDL": []}
@@ -282,6 +285,32 @@ def compare_results(bns, BDE_path, MDL_path):
         metrics["F1_MDL"].append(f1)
 
         draw_compare_bn(bn_nx, nx_MDL[key], key)
+
+    df_metrics = pd.DataFrame(metrics, index=[f'BN_{i}' for i in range(len(bns))])
+    df_metrics.index.name = 'BN_index'
+    df_metrics.to_csv('bnf_metrics.csv')
+    return df_metrics
+
+
+
+def compare_results_single(bns, BNF_path):
+    nx_BNF = multiple_sif_to_nx(BNF_path)
+
+    metrics = {"SHD": [], "Jaccard": [], "Precision": [], "Recall": [], "F1": []}
+
+    bn = bns[0]
+    bn_nx = bn.to_nx_graph()
+
+    key = f'dataset_0'
+    metrics["SHD_BDE"].append(shd(bn_nx, nx_BNF[key]))
+    metrics["Jaccard_BDE"].append(jaccard_index(bn_nx, nx_BNF[key]))
+
+    p, r, f1 = precision_recall_f1(bn_nx, nx_BNF[key])
+    metrics["Precision_BDE"].append(p)
+    metrics["Recall_BDE"].append(r)
+    metrics["F1_BDE"].append(f1)
+
+    draw_compare_bn(bn_nx, nx_BNF[key], key)
 
     df_metrics = pd.DataFrame(metrics, index=[f'BN_{i}' for i in range(len(bns))])
     df_metrics.index.name = 'BN_index'
