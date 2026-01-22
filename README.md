@@ -75,7 +75,7 @@ Key components:
 
 ## Setup
 
-1. Download the [BNfinder source code](https://launchpad.net/bnfinder) and unpack it in the current directory.
+1. Download the [BNFinder source code](https://launchpad.net/bnfinder) and unpack it in the current directory.
 ```bash
 tar -xzf BNfinder-2.0.*.tar.gz
 rm -f BNfinder-2.0.*.tar.gz
