@@ -5,7 +5,7 @@ import networkx as nx
 from graph_utils import shd, jaccard_index, precision_recall_f1, sif_to_nx
 from bn import *
 
-def draw_compare_bn(G_true, G_pred, path, filename):
+def draw_compare_bn(G_true, G_pred, path, filename, show=False):
     
     G_combined = nx.compose(G_pred, G_true)  # includes all nodes from both
     pos = nx.kamada_kawai_layout(G_combined)
@@ -17,6 +17,7 @@ def draw_compare_bn(G_true, G_pred, path, filename):
     figure_path = path + "_graphs"
     os.makedirs(figure_path, exist_ok=True)
     plt.savefig(os.path.join(figure_path, f"{filename}_comparison.png"), bbox_inches="tight")
+    if show: plt.show()
     plt.close()
 
 
@@ -40,7 +41,7 @@ def compare_results_multiple(origin_dict, path):
     return df_metrics
 
 
-def compare_results_single(bn, path, filename):
+def compare_results_single(bn, path, filename, show=False):
 
     metrics = {}
     
@@ -55,6 +56,6 @@ def compare_results_single(bn, path, filename):
     metrics["Recall"] = (r)
     metrics["F1"] = (f1)
 
-    draw_compare_bn(bn_nx, file_nx, path, filename)
+    draw_compare_bn(bn_nx, file_nx, path, filename, show=show)
 
     return metrics

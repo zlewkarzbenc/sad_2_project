@@ -58,7 +58,7 @@ def ofat_combinations(param_lists):
 
 
 
-def generate_dataset(bn, attractor_set, mode, num_steps, num_traj, freq) -> None:
+def generate_dataset(bn, index, attractor_set, mode, num_steps, num_traj, freq) -> None:
     
     dataset = []
     metadata = []
@@ -77,13 +77,14 @@ def generate_dataset(bn, attractor_set, mode, num_steps, num_traj, freq) -> None
 
         # liczba stanów atraktorowych
         num_att_states = sum(1 for state in final_traj if state in attractor_set)
+        att_ratio = round(num_att_states / len(final_traj), 2) * 100
 
         metadata.append({
-            'name': f'traj_{j}_m_{mode}_t_{num_traj}_s_{num_steps}_f_{freq}',
+            'name': f'bn_{index}_m_{mode}_t_{num_traj}_s_{num_steps}_f_{freq}_a_{att_ratio}_traj_{j}',
             'mode': mode,
             'length': num_steps,
             'frequency': freq,
-            'attractors': round(num_att_states / len(final_traj), 2)
+            'attractors': att_ratio
         })
 
     return dataset, metadata
@@ -104,7 +105,7 @@ def datasets_for_gridsearch(bns, output_dir, ofat_params) -> None:
         for param_set in ofat_params:
 
             mode, num_steps, num_traj, freq = param_set
-            dataset, meta = generate_dataset(bn, flat_set, mode, num_steps, num_traj, freq)
+            dataset, meta = generate_dataset(bn, i, flat_set, mode, num_steps, num_traj, freq)
 
             # zapis datasetu dla tej kombinacji
             filename = f'bn_{i}_m_{mode}_t_{num_traj}_s_{num_steps}_f_{freq}.txt'
@@ -124,7 +125,7 @@ def dataset_for_model(bn, mode, num_steps, num_traj, freq, output_dir, filename)
     attractors = bn.get_attractors()
     attractor_set = set().union(*attractors)
 
-    dataset, metadata = generate_dataset(bn, attractor_set, mode, num_steps, num_traj, freq)
+    dataset, metadata = generate_dataset(bn, 0, attractor_set, mode, num_steps, num_traj, freq)
     trajectories_to_bnfinder_txt(bn, dataset, output_dir, filename)
     
     pd.DataFrame(metadata).to_csv('metadata_model.csv', index=False)
