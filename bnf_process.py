@@ -154,6 +154,10 @@ def run_bnfinder_and_collect(input_folder: str, output_folder: str,
     os.makedirs(output_folder, exist_ok=True)
     # Running BNFinder for each file
     for name in os.listdir(input_folder):
+        for name in os.listdir(input_folder):
+            if not name.endswith(".txt"):
+                continue
+
         input_txt = os.path.join(input_folder, name)
         output_sif = os.path.join(output_folder, name.replace(".txt", ".sif"))
         
@@ -221,12 +225,16 @@ def jaccard_index(G_true: nx.DiGraph, G_pred: nx.DiGraph) -> float:
 
 def precision_recall_f1(G_true: nx.DiGraph, G_pred: nx.DiGraph) -> tuple[float, float, float]:
     """Calculates precision, recall, and F1-score between the edge sets of two graphs"""
-    # Ensure all nodes are included
     nodes = list(G_true.nodes())
-    
-    # Convert to adjacency matrices
+
     A_true = nx.to_numpy_array(G_true, nodelist=nodes)
-    A_pred = nx.to_numpy_array(G_pred, nodelist=nodes) if len(G_pred.nodes()) > 0 else np.zeros_like(A_true)
+
+    # Make a copy so you don't mutate the original graph
+    G_pred_aligned = G_pred.copy()
+    G_pred_aligned.add_nodes_from(nodes)
+
+    A_pred = nx.to_numpy_array(G_pred_aligned, nodelist=nodes)
+
 
     # Flatten for sklearn
     y_true = A_true.flatten()
