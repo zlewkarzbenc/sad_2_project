@@ -48,67 +48,145 @@ def trajectories_to_bnfinder_txt(bn, trajectories, output_dir, filename) -> None
 
         for node, values in zip(nodes, node_values):
             f.write(node + " " + " ".join(values) + "\n")
+# def ofat_combinations(param_lists):
+#     """
+#     param_lists: lista list parametrów, [m_list, s_list, d_list]
+#     zwraca listę kombinacji OFAT
+#     """
+#     mids = [lst[len(lst)//2] for lst in param_lists]  # środkowe wartości
+#     results = set()
+
+#     for idx, lst in enumerate(param_lists):
+#         for val in lst:
+#             combo = mids.copy()
+#             combo[idx] = val
+#             results.add(tuple(combo))
+
+#     return list(results)
+
+def ofat_combinations(param_lists):
+    mids = [lst[len(lst)//2] for lst in param_lists]
+    modes = ["synch", "asynch"]
+    results = set()
+
+    for idx, lst in enumerate(param_lists):
+        for val in lst:
+            combo = mids.copy()
+            combo[idx] = val
+            for mode in modes:
+                results.add((mode, *combo))
+
+    return list(results)
 
 
-def dataset_for_nets(bns, output_dir, num_of_traj=None,
-                    mode=None, num_steps=None, frequency_choice=None) -> None:
-    '''
-    Generate datasets for a list of Boolean networks and save them
-    in BNFinder TXT format.
-    Args:
-        bns: List of BN instances.
-        output_dir: Directory to save the output TXT files.
-    Output:
 
-    '''
 
+def datasets_for_gridsearch(bns, output_dir, ofat_params) -> None:
+    modes = ['sync', 'async']
     metadata = []
+
     for i, bn in enumerate(bns):
-        dataset = []
 
         attractors = bn.get_attractors()
+        flat_set = set().union(*attractors)
 
-        if not num_of_traj: num_of_traj = random.randint(1, 5)
 
-        for j in range(num_of_traj):
 
-            init = tuple(random.randint(0,1) for _ in range(bn.num_nodes))
+        for param_set in ofat_params:
 
-            # choose sync or async
-            if not mode: 
-                p_sync = random.random()
-                if p_sync < 0.5:
-                    mode = 'async'
-                else:
-                    mode = 'sync'
+            mode, num_steps, num_traj, freq = param_set
+            dataset = []
+            for j in range(num_traj):
 
-            # choose length of trajectory
-            if not num_steps: num_steps = random.randint(10, 100)
-            traj = bn.simulate_trajectory(init, steps=num_steps, mode=mode)
+                # losowy punkt startowy
+                init = tuple(random.randint(0, 1) for _ in range(bn.num_nodes))
 
-            # add trajectory (change frequency)
-            if not frequency_choice: frequency_choice = random.randint(1, 5)
-            final_traj = BN.sample_trajectory(traj, freq=frequency_choice)
-            dataset.append(final_traj)
+                # pełna trajektoria
+                traj = bn.simulate_trajectory(init, steps=num_steps, mode=mode)
 
-            # number of attractor states in the trajectory
-            flat_set = set()
-            for attr in attractors:
-                flat_set.update(attr)
+                # próbkowanie
+                final_traj = BN.sample_trajectory(traj, freq=freq)
+                dataset.append(final_traj)
 
-            num_of_att_states = sum(1 for state in final_traj if state in flat_set)
+                # liczba stanów atraktorowych
+                num_att_states = sum(1 for state in final_traj if state in flat_set)
 
-            metadata.append({'name': f'dataset_{i}_traj_{j}',
-                        'mode': mode,
-                        'length': num_steps,
-                        'frequency': frequency_choice,
-                        'attractors': round(num_of_att_states/len(final_traj), 2)})
-        
-        trajectories_to_bnfinder_txt(bn, dataset, output_dir, f'dataset_{i}.txt')
+                metadata.append({
+                    'name': f'dataset_{i}_traj_{j}_m_{mode}_t_{num_traj}_s_{num_steps}_f_{freq}',
+                    'mode': mode,
+                    'length': num_steps,
+                    'frequency': freq,
+                    'attractors': round(num_att_states / len(final_traj), 2)
+                })
+
+            # zapis datasetu dla tej kombinacji
+            filename = f'dataset_{i}_m_{mode}_t_{num_traj}_s_{num_steps}_f_{freq}.txt'
+            trajectories_to_bnfinder_txt(bn, dataset, output_dir, filename)
 
     # Write metadata to CSV
     metadata_df = pd.DataFrame(metadata)
-    metadata_df.to_csv(os.path.join(output_dir, 'metadata.csv'), index=False)
+    metadata_df.to_csv('metadata_nets.csv', index=False)
+
+
+# def dataset_for_nets(bns, output_dir, num_of_traj=None,
+#                     mode=None, num_steps=None, frequency_choice=None) -> None:
+#     '''
+#     Generate datasets for a list of Boolean networks and save them
+#     in BNFinder TXT format.
+#     Args:
+#         bns: List of BN instances.
+#         output_dir: Directory to save the output TXT files.
+#     Output:
+
+#     '''
+
+#     metadata = []
+#     for i, bn in enumerate(bns):
+#         dataset = []
+
+#         attractors = bn.get_attractors()
+
+#         if not num_of_traj: num_of_traj = random.randint(1, 5)
+
+#         for j in range(num_of_traj):
+
+#             init = tuple(random.randint(0,1) for _ in range(bn.num_nodes))
+
+#             # choose sync or async
+#             if not mode: 
+#                 p_sync = random.random()
+#                 if p_sync < 0.5:
+#                     mode = 'async'
+#                 else:
+#                     mode = 'sync'
+
+#             # choose length of trajectory
+#             if not num_steps: num_steps = random.randint(10, 100)
+#             traj = bn.simulate_trajectory(init, steps=num_steps, mode=mode)
+
+#             # add trajectory (change frequency)
+#             if not frequency_choice: frequency_choice = random.randint(1, 5)
+#             final_traj = BN.sample_trajectory(traj, freq=frequency_choice)
+#             dataset.append(final_traj)
+
+#             # number of attractor states in the trajectory
+#             flat_set = set()
+#             for attr in attractors:
+#                 flat_set.update(attr)
+
+#             num_of_att_states = sum(1 for state in final_traj if state in flat_set)
+
+#             metadata.append({'name': f'dataset_{i}_traj_{j}',
+#                         'mode': mode,
+#                         'length': num_steps,
+#                         'frequency': frequency_choice,
+#                         'attractors': round(num_of_att_states/len(final_traj), 2)})
+        
+#         trajectories_to_bnfinder_txt(bn, dataset, output_dir, f'dataset_{i}.txt')
+
+#     # Write metadata to CSV
+#     metadata_df = pd.DataFrame(metadata)
+#     metadata_df.to_csv(os.path.join(output_dir, 'metadata.csv'), index=False)
 
 
 
@@ -154,9 +232,8 @@ def run_bnfinder_and_collect(input_folder: str, output_folder: str,
     os.makedirs(output_folder, exist_ok=True)
     # Running BNFinder for each file
     for name in os.listdir(input_folder):
-        for name in os.listdir(input_folder):
-            if not name.endswith(".txt"):
-                continue
+        if not name.endswith(".txt"):
+            continue
 
         input_txt = os.path.join(input_folder, name)
         output_sif = os.path.join(output_folder, name.replace(".txt", ".sif"))
@@ -251,25 +328,24 @@ def precision_recall_f1(G_true: nx.DiGraph, G_pred: nx.DiGraph) -> tuple[float, 
     
 
 def draw_compare_bn(G_true, G_pred, title):
+    G_combined = nx.compose(G_pred, G_true)  # includes all nodes from both
+    pos = nx.spring_layout(G_combined, seed=42)
 
-    nx.draw(G_pred, nx.kamada_kawai_layout(G_pred), with_labels=True, node_color="lightblue", arrowsize=20)
-    plt.title(f"Predicted edges - {title}")
-    plt.show()
-    
-    nx.draw(G_true, nx.kamada_kawai_layout(G_true), with_labels=True, node_color='green', arrowsize=20)
-    plt.title(f"Ground truth edges - {title}")
-    plt.show()
+    nx.draw(G_pred, pos, with_labels=True, node_color="lightblue", arrowsize=20)
+    nx.draw(G_true, pos, with_labels=True, edge_color='green', style='dashed', alpha=0.5)
 
+    plt.title(f"Ground truth edges (green dashed) vs Predicted network (blue) - {title}")
+    plt.show()
 
 def compare_results(bns, BDE_path, MDL_path):
     nx_BDE = multiple_sif_to_nx(BDE_path)
     nx_MDL = multiple_sif_to_nx(MDL_path)
+    print(nx_BDE)
 
     metrics = {"SHD_BDE": [], "Jaccard_BDE": [], "Precision_BDE": [], "Recall_BDE": [], "F1_BDE": [],
             "SHD_MDL": [], "Jaccard_MDL": [], "Precision_MDL": [], "Recall_MDL": [], "F1_MDL": []}
 
-    for i in range(len(bns)):
-        bn = bns[i]
+    for i, bn in enumerate(bns):
         bn_nx = bn.to_nx_graph()
 
         key = f'dataset_{i}_BDE'
@@ -298,6 +374,47 @@ def compare_results(bns, BDE_path, MDL_path):
     df_metrics.index.name = 'BN_index'
     df_metrics.to_csv('bnf_metrics.csv')
     return df_metrics
+
+
+
+# def compare_results(bns, BDE_path, MDL_path):
+#     nx_BDE = multiple_sif_to_nx(BDE_path)
+#     nx_MDL = multiple_sif_to_nx(MDL_path)
+#     print(nx_BDE)
+
+#     metrics = {"SHD_BDE": [], "Jaccard_BDE": [], "Precision_BDE": [], "Recall_BDE": [], "F1_BDE": [],
+#             "SHD_MDL": [], "Jaccard_MDL": [], "Precision_MDL": [], "Recall_MDL": [], "F1_MDL": []}
+
+#     for i in range(len(bns)):
+#         bn = bns[i]
+#         bn_nx = bn.to_nx_graph()
+
+#         key = f'dataset_{i}_BDE'
+#         metrics["SHD_BDE"].append(shd(bn_nx, nx_BDE[key]))
+#         metrics["Jaccard_BDE"].append(jaccard_index(bn_nx, nx_BDE[key]))
+
+#         p, r, f1 = precision_recall_f1(bn_nx, nx_BDE[key])
+#         metrics["Precision_BDE"].append(p)
+#         metrics["Recall_BDE"].append(r)
+#         metrics["F1_BDE"].append(f1)
+
+#         draw_compare_bn(bn_nx, nx_BDE[key], key)
+
+#         key = f'dataset_{i}_MDL'
+#         metrics["SHD_MDL"].append(shd(bn_nx, nx_MDL[key]))
+#         metrics["Jaccard_MDL"].append(jaccard_index(bn_nx, nx_MDL[key]))
+        
+#         p, r, f1 = precision_recall_f1(bn_nx, nx_MDL[key])
+#         metrics["Precision_MDL"].append(p)
+#         metrics["Recall_MDL"].append(r)
+#         metrics["F1_MDL"].append(f1)
+
+#         draw_compare_bn(bn_nx, nx_MDL[key], key)
+
+#     df_metrics = pd.DataFrame(metrics, index=[f'BN_{i}' for i in range(len(bns))])
+#     df_metrics.index.name = 'BN_index'
+#     df_metrics.to_csv('bnf_metrics.csv')
+#     return df_metrics
 
 
 

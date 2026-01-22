@@ -1,2 +1,6 @@
 BNfinder-2.0.4/*
 
+__pycache__/*
+
+# to ewentualnie można wywalić
+output_model/*
