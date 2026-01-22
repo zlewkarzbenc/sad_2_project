@@ -2,7 +2,7 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import networkx as nx
-from graph_utils import shd, jaccard_index, precision_recall_f1, sif_to_nx
+from graph_utils import jaccard_index, precision_recall_f1, sif_to_nx
 from bn import *
 
 def draw_compare_bn(G_true, G_pred, path, filename, show=False):
@@ -24,7 +24,7 @@ def draw_compare_bn(G_true, G_pred, path, filename, show=False):
 
 def compare_results_multiple(origin_dict, path):
 
-    metrics = {"SHD": [], "Jaccard": [], "Precision": [], "Recall": [], "F1": []}
+    metrics = {"Jaccard": [], "Precision": [], "Recall": [], "F1": []}
     index = []
 
     for bn in origin_dict:
@@ -48,7 +48,6 @@ def compare_results_single(bn, path, filename, show=False):
     bn_nx = bn.to_nx_graph()
     file_nx = sif_to_nx(os.path.join(path, filename + ".sif"))
     
-    metrics["SHD"] = (shd(bn_nx, file_nx))
     metrics["Jaccard"] = (jaccard_index(bn_nx, file_nx))
 
     p, r, f1 = precision_recall_f1(bn_nx, file_nx)

@@ -19,14 +19,6 @@ def sif_to_nx(sif_file: str) -> nx.DiGraph:
     return G
 
 
-def shd(G_true: nx.DiGraph, G_pred: nx.DiGraph) -> int:
-    "Calculates the Structural Hamming Distance (SHD) between two graphs."
-
-    all_edges = set(G_true.edges()).union(set(G_pred.edges()))
-    diff = sum(1 for e in all_edges if e not in G_true.edges() or e not in G_pred.edges())
-    return diff
-
-
 def jaccard_index(G_true: nx.DiGraph, G_pred: nx.DiGraph) -> float:
     """Calculates the Jaccard Index between the edge sets of two graphs.
     It is a fraction of correctly predicted edges"""
