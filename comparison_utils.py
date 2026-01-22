@@ -5,7 +5,28 @@ import networkx as nx
 from graph_utils import jaccard_index, precision_recall_f1, sif_to_nx
 from bn import *
 
-def draw_compare_bn(G_true, G_pred, path, filename, show=False):
+"""
+Utilities for evaluating reconstructed Boolean networks by comparing predicted
+graphs against ground‑truth networks.
+"""
+
+def draw_compare_bn(G_true: nx.DiGraph, G_pred: nx.DiGraph, 
+                    path: str, filename: str, show=False)->None:
+    """
+    Draws a comparison plot between the predicted and ground‑truth Boolean networks and saves a PNG file with the comparison plot.
+    Args:
+    G_true : nx.DiGraph
+        Ground‑truth network as a directed graph.
+    G_pred : nx.DiGraph
+        Predicted network reconstructed by BNFinder.
+    path : str
+        Path to the directory containing the .sif file and where output graphs will be saved.
+    filename : str
+        Base name of the dataset (used for saving the plot).
+    show : bool, optional
+        Whether to display the plot interactively. Default is False.
+    """
+
     
     G_combined = nx.compose(G_pred, G_true)  # includes all nodes from both
     pos = nx.kamada_kawai_layout(G_combined)
@@ -22,7 +43,21 @@ def draw_compare_bn(G_true, G_pred, path, filename, show=False):
 
 
 
-def compare_results_multiple(origin_dict, path):
+def compare_results_multiple(origin_dict: dict, path: str)->pd.DataFrame:
+    """
+    Computes evaluation metrics for multiple reconstructed networks.
+    Args:
+    origin_dict : dict
+        Dictionary mapping BN objects to lists of filenames.
+        Example: { bn_object : ["bn_0_m_synch_t_1_s_50_f_3", ...] }
+    path : str
+        Path to the directory containing .sif files.
+    Returns:
+    pd.DataFrame
+        DataFrame indexed by dataset name with columns:
+        ["Jaccard", "Precision", "Recall", "F1"].
+    """
+
 
     metrics = {"Jaccard": [], "Precision": [], "Recall": [], "F1": []}
     index = []
@@ -41,7 +76,28 @@ def compare_results_multiple(origin_dict, path):
     return df_metrics
 
 
-def compare_results_single(bn, path, filename, show=False):
+def compare_results_single(bn, path: str, filename: str, show=False)->dict:
+    """
+    Computes similarity metrics between a ground‑truth BN and a reconstructed network.
+    Args:
+    bn : BN
+        Ground‑truth Boolean Network object
+    path : str
+        Path to the directory containing the .sif file.
+    filename : str
+        Base name of the dataset (without extension).
+    show : bool, optional
+        Whether to display the comparison plot. Default is False.
+        
+    Returns:
+    dict
+        Dictionary with keys:
+        - "Jaccard"
+        - "Precision"
+        - "Recall"
+        - "F1"
+    """
+
 
     metrics = {}
     

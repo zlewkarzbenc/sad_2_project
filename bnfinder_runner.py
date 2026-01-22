@@ -4,8 +4,14 @@ import subprocess
 import csv
 import re
 
+"""
+Module for running BNFinder with predefined settings and handling all input/output
+operations required for network reconstruction experiments.
+"""
 
-def run_bnfinder_4_one(python2_path, bnfinder_path, input_txt, output_sif, score):
+
+def run_bnfinder_4_one(python2_path: str, bnfinder_path: str, input_txt: str,
+                       output_sif: str, score: str)->None:
     '''
     Run BNFinder on a single input file.
     Args:
