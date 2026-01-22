@@ -98,6 +98,8 @@ cd ..
 3. Use the `main.ipynb` jupyter notebook (or your own scripts) to use the provided software
 
 ## Input/Output Overview
-The directory `input_for_bnfinder/` contains all synthetic time‑series datasets used as input for BNFinder.The folders `output_bnf_BDE/` and `output_bnf_MDL/` store the reconstructed network structures produced by BNFinder under the BDE and MDL scoring schemes, respectively. The corresponding `output_*_graphs/` directories include comparison plots visualizing differences between the true and reconstructed networks. These outputs illustrate reconstruction quality across different parameter settings and update modes.
+The directory `input_for_bnfinder/` contains all synthetic time‑series datasets used as input for BNFinder.The folders `output_bnf_BDE/` and `output_bnf_MDL/` store the reconstructed network structures produced by BNFinder under the BDE and MDL scoring schemes, respectively. The corresponding `output_*_graphs/` directories include comparison plots visualizing differences between the true and reconstructed networks. These outputs illustrate reconstruction quality across different parameter settings and update modes.</br>
+Files generated for the selected ground‑truth model are marked with the `_model` suffix.
+
 
 
