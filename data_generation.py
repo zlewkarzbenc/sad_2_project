@@ -4,7 +4,11 @@ import random
 import pandas as pd
 from bn import *
 
-def trajectories_to_bnfinder_txt(bn, trajectories, output_dir, filename) -> None:
+"""
+Module for generating synthetic datasets for Boolean Network experiments.
+"""
+
+def trajectories_to_bnfinder_txt(bn, trajectories, output_dir: str, filename: str) -> None:
     """
     Convert trajectories directly into a BNFinder-compatible TXT file.
 
@@ -42,15 +46,29 @@ def trajectories_to_bnfinder_txt(bn, trajectories, output_dir, filename) -> None
 
 
 
-def ofat_combinations(param_lists):
+def ofat_combinations(param_lists: list[list])->list[tuple]]:
+    """
+    Generates OFAT (one-factor-at-a-time) parameter combinations.
+
+    Args:
+        param_lists (list[list]): A list of parameter lists. Each inner list
+            contains possible values for one parameter.
+
+    Returns:
+        list[tuple]: List of parameter combinations in the form:
+            (mode, param1, param2, ...)
+    """
+    ## Take the middle value of each parameter list (baseline for OFAT)
     mids = [lst[len(lst)//2] for lst in param_lists]
     modes = ["synch", "asynch"]
     results = set()
-
+    
+    # vary one parameter at a time while keeping others at their mid values
     for idx, lst in enumerate(param_lists):
         for val in lst:
             combo = mids.copy()
-            combo[idx] = val
+            combo[idx] = val # replace only the parameter being varied
+            # # Add both synchronous and asynchronous variants
             for mode in modes:
                 results.add((mode, *combo))
 
@@ -58,24 +76,43 @@ def ofat_combinations(param_lists):
 
 
 
-def generate_dataset(bn, index, attractor_set, mode, num_steps, num_traj, freq) -> None:
+def generate_dataset(bn, index: int, attractor_set: set,
+                     mode: str, num_steps: int, num_traj: int, freq: int) -> None:
+    """
+    Generates a dataset by simulating trajectories from random initial states.
+
+    Args:
+        bn (BN): Boolean Network object.
+        index (int): Index of the BN (used for naming).
+        attractor_set (set): Set of attractor states for the BN.
+        mode (str): Update mode ("synch" or "asynch").
+        num_steps (int): Number of simulation steps per trajectory.
+        num_traj (int): Number of trajectories to generate.
+        freq (int): Sampling frequency for downsampling trajectories.
+
+    Returns:
+        tuple:
+            dataset (list[list[tuple[int]]]): List of sampled trajectories.
+            metadata (list[dict]): Metadata entries for each trajectory.
+    """
+
     
     dataset = []
     metadata = []
 
     for j in range(num_traj):
 
-        # losowy punkt startowy
+        # Random initial point
         init = tuple(random.randint(0, 1) for _ in range(bn.num_nodes))
 
-        # pełna trajektoria
+        # Complete trajectory
         traj = bn.simulate_trajectory(init, steps=num_steps, mode=mode)
 
-        # próbkowanie
+        # Sampling
         final_traj = BN.sample_trajectory(traj, freq=freq)
         dataset.append(final_traj)
 
-        # liczba stanów atraktorowych
+        # Number of attractors
         num_att_states = sum(1 for state in final_traj if state in attractor_set)
         att_ratio = round(num_att_states / len(final_traj), 2) * 100
 
@@ -90,10 +127,23 @@ def generate_dataset(bn, index, attractor_set, mode, num_steps, num_traj, freq) 
     return dataset, metadata
 
 
-def datasets_for_gridsearch(bns, output_dir, ofat_params) -> None:
+def datasets_for_gridsearch(bns, output_dir: str, ofat_params) -> None:
+    """
+    Generates datasets for multiple Boolean Networks across OFAT parameter sets.
+
+    Args:
+        bns (list[BN]): List of Boolean Network objects.
+        output_dir (str): Directory where datasets will be saved.
+        ofat_params (list[tuple]): List of parameter combinations produced by
+            `ofat_combinations`.
+
+    Returns:
+        dict: Mapping BN --> list of dataset base filenames (without extension).
+    """
+
     
     metadata = []
-    origin_bn = {} # słownik przechowujący nazwy plików dla każdej sieci
+    origin_bn = {} # a dictionary that stores the filenames associated with each network
 
     for i, bn in enumerate(bns):
 
@@ -107,7 +157,7 @@ def datasets_for_gridsearch(bns, output_dir, ofat_params) -> None:
             mode, num_steps, num_traj, freq = param_set
             dataset, meta = generate_dataset(bn, i, flat_set, mode, num_steps, num_traj, freq)
 
-            # zapis datasetu dla tej kombinacji
+            # Saving dataset for the given combination
             filename = f'bn_{i}_m_{mode}_t_{num_traj}_s_{num_steps}_f_{freq}.txt'
             trajectories_to_bnfinder_txt(bn, dataset, output_dir, filename)
 
@@ -121,7 +171,21 @@ def datasets_for_gridsearch(bns, output_dir, ofat_params) -> None:
     return origin_bn
 
 
-def dataset_for_model(bn, mode, num_steps, num_traj, freq, output_dir, filename):
+def dataset_for_model(bn, mode: str, num_steps: int, 
+                      num_traj: int, freq: int, output_dir: str, filename: str)->None:
+    """
+    Generates a dataset for a single Boolean Network model.
+
+    Args:
+        bn (BN): Boolean Network object.
+        mode (str): Update mode ("synch" or "asynch").
+        num_steps (int): Number of simulation steps.
+        num_traj (int): Number of trajectories to generate.
+        freq (int): Sampling frequency.
+        output_dir (str): Directory where the dataset will be saved.
+        filename (str): Output filename for the BNFinder TXT file.
+    """
+
     attractors = bn.get_attractors()
     attractor_set = set().union(*attractors)
 
