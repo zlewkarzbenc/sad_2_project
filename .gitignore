@@ -9,3 +9,4 @@ output_bnf_MDL/
 output_bnf_BDE/
 
 metadata_nets.csv
+bnf_metrics.csv
