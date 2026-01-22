@@ -2,120 +2,59 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import networkx as nx
-from graph_utils import shd, jaccard_index, precision_recall_f1, multiple_sif_to_nx
+from graph_utils import shd, jaccard_index, precision_recall_f1, sif_to_nx
 from bn import *
 
-def draw_compare_bn(G_true, G_pred, title):
+def draw_compare_bn(G_true, G_pred, path, filename):
+    
     G_combined = nx.compose(G_pred, G_true)  # includes all nodes from both
-    pos = nx.spring_layout(G_combined, seed=42)
+    pos = nx.kamada_kawai_layout(G_combined)
 
     nx.draw(G_pred, pos, with_labels=True, node_color="lightblue", arrowsize=20)
-    nx.draw(G_true, pos, with_labels=True, edge_color='green', style='dashed', alpha=0.5)
+    nx.draw(G_true, pos, with_labels=True, edge_color='green', style='dashed')
 
-    plt.title(f"Ground truth edges (green dashed) vs Predicted network (blue) - {title}")
-    plt.show()
-
-def compare_results(bns, BDE_path, MDL_path):
-    nx_BDE = multiple_sif_to_nx(BDE_path)
-    nx_MDL = multiple_sif_to_nx(MDL_path)
-    print(nx_BDE)
-
-    metrics = {"SHD_BDE": [], "Jaccard_BDE": [], "Precision_BDE": [], "Recall_BDE": [], "F1_BDE": [],
-            "SHD_MDL": [], "Jaccard_MDL": [], "Precision_MDL": [], "Recall_MDL": [], "F1_MDL": []}
-
-    for i, bn in enumerate(bns):
-        bn_nx = bn.to_nx_graph()
-
-        key = f'dataset_{i}_BDE'
-        metrics["SHD_BDE"].append(shd(bn_nx, nx_BDE[key]))
-        metrics["Jaccard_BDE"].append(jaccard_index(bn_nx, nx_BDE[key]))
-
-        p, r, f1 = precision_recall_f1(bn_nx, nx_BDE[key])
-        metrics["Precision_BDE"].append(p)
-        metrics["Recall_BDE"].append(r)
-        metrics["F1_BDE"].append(f1)
-
-        draw_compare_bn(bn_nx, nx_BDE[key], key)
-
-        key = f'dataset_{i}_MDL'
-        metrics["SHD_MDL"].append(shd(bn_nx, nx_MDL[key]))
-        metrics["Jaccard_MDL"].append(jaccard_index(bn_nx, nx_MDL[key]))
-        
-        p, r, f1 = precision_recall_f1(bn_nx, nx_MDL[key])
-        metrics["Precision_MDL"].append(p)
-        metrics["Recall_MDL"].append(r)
-        metrics["F1_MDL"].append(f1)
-
-        draw_compare_bn(bn_nx, nx_MDL[key], key)
-
-    df_metrics = pd.DataFrame(metrics, index=[f'BN_{i}' for i in range(len(bns))])
-    df_metrics.index.name = 'BN_index'
-    df_metrics.to_csv('bnf_metrics.csv')
-    return df_metrics
+    plt.title(f"Predicted network vs Ground truth edges (green) - {filename}")
+    figure_path = path + "_graphs"
+    os.makedirs(figure_path, exist_ok=True)
+    plt.savefig(os.path.join(figure_path, f"{filename}_comparison.png"), bbox_inches="tight")
+    plt.close()
 
 
 
-# def compare_results(bns, BDE_path, MDL_path):
-#     nx_BDE = multiple_sif_to_nx(BDE_path)
-#     nx_MDL = multiple_sif_to_nx(MDL_path)
-#     print(nx_BDE)
-
-#     metrics = {"SHD_BDE": [], "Jaccard_BDE": [], "Precision_BDE": [], "Recall_BDE": [], "F1_BDE": [],
-#             "SHD_MDL": [], "Jaccard_MDL": [], "Precision_MDL": [], "Recall_MDL": [], "F1_MDL": []}
-
-#     for i in range(len(bns)):
-#         bn = bns[i]
-#         bn_nx = bn.to_nx_graph()
-
-#         key = f'dataset_{i}_BDE'
-#         metrics["SHD_BDE"].append(shd(bn_nx, nx_BDE[key]))
-#         metrics["Jaccard_BDE"].append(jaccard_index(bn_nx, nx_BDE[key]))
-
-#         p, r, f1 = precision_recall_f1(bn_nx, nx_BDE[key])
-#         metrics["Precision_BDE"].append(p)
-#         metrics["Recall_BDE"].append(r)
-#         metrics["F1_BDE"].append(f1)
-
-#         draw_compare_bn(bn_nx, nx_BDE[key], key)
-
-#         key = f'dataset_{i}_MDL'
-#         metrics["SHD_MDL"].append(shd(bn_nx, nx_MDL[key]))
-#         metrics["Jaccard_MDL"].append(jaccard_index(bn_nx, nx_MDL[key]))
-        
-#         p, r, f1 = precision_recall_f1(bn_nx, nx_MDL[key])
-#         metrics["Precision_MDL"].append(p)
-#         metrics["Recall_MDL"].append(r)
-#         metrics["F1_MDL"].append(f1)
-
-#         draw_compare_bn(bn_nx, nx_MDL[key], key)
-
-#     df_metrics = pd.DataFrame(metrics, index=[f'BN_{i}' for i in range(len(bns))])
-#     df_metrics.index.name = 'BN_index'
-#     df_metrics.to_csv('bnf_metrics.csv')
-#     return df_metrics
-
-
-
-def compare_results_single(bns, BNF_path):
-    nx_BNF = multiple_sif_to_nx(BNF_path)
+def compare_results_multiple(origin_dict, path):
 
     metrics = {"SHD": [], "Jaccard": [], "Precision": [], "Recall": [], "F1": []}
+    index = []
 
-    bn = bns[0]
-    bn_nx = bn.to_nx_graph()
+    for bn in origin_dict:
 
-    key = f'dataset_0'
-    metrics["SHD_BDE"].append(shd(bn_nx, nx_BNF[key]))
-    metrics["Jaccard_BDE"].append(jaccard_index(bn_nx, nx_BNF[key]))
+        for filename in origin_dict[bn]:
+            index.append(filename)
+            file_metrics = compare_results_single(bn, path, filename)
 
-    p, r, f1 = precision_recall_f1(bn_nx, nx_BNF[key])
-    metrics["Precision_BDE"].append(p)
-    metrics["Recall_BDE"].append(r)
-    metrics["F1_BDE"].append(f1)
+            for k, v in file_metrics.items():
+                metrics[k].append(v)
 
-    draw_compare_bn(bn_nx, nx_BNF[key], key)
-
-    df_metrics = pd.DataFrame(metrics, index=[f'BN_{i}' for i in range(len(bns))])
-    df_metrics.index.name = 'BN_index'
-    df_metrics.to_csv('bnf_metrics.csv')
+    df_metrics = pd.DataFrame(metrics, index=index)
+    df_metrics.index.name = 'Dataset'
     return df_metrics
+
+
+def compare_results_single(bn, path, filename):
+
+    metrics = {}
+    
+    bn_nx = bn.to_nx_graph()
+    file_nx = sif_to_nx(os.path.join(path, filename + ".sif"))
+    
+    metrics["SHD"] = (shd(bn_nx, file_nx))
+    metrics["Jaccard"] = (jaccard_index(bn_nx, file_nx))
+
+    p, r, f1 = precision_recall_f1(bn_nx, file_nx)
+    metrics["Precision"] = (p)
+    metrics["Recall"] = (r)
+    metrics["F1"] = (f1)
+
+    draw_compare_bn(bn_nx, file_nx, path, filename)
+
+    return metrics
