@@ -4,9 +4,20 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from scipy.stats import wilcoxon, kruskal
 
+"""
+Visualization utilities for Boolean Network reconstruction experiments.
+"""
 
-def plot_attractor_histogram(metadata_path, output_path):
-    """Plots a histogram of the attractor ratios from the metadata CSV file."""
+def plot_attractor_histogram(metadata_path: str, output_path: str)->None:
+    """
+    Plots a histogram of attractor ratios from a metadata CSV file.
+
+    Args:
+        metadata_path (str): Path to the metadata CSV file containing an
+            'attractors' column with attractor ratios.
+        output_path (str): Directory where the histogram image will be saved.
+    """
+
     
     metadata = pd.read_csv(metadata_path)
     attractors = metadata['attractors']
@@ -24,8 +35,16 @@ def plot_attractor_histogram(metadata_path, output_path):
     plt.show()
 
 
-def plot_metric_comparison(df_metrics, metrics, output_path):
-    """Plots comparison of specified metrics between BDE and MDL score functions."""
+def plot_metric_comparison(df_metrics: pd.DataFrame, metrics: list[str], output_path: str)->None:
+    """
+    Plots a comparison of selected metrics between BDE and MDL scoring functions.
+
+    Args:
+        df_metrics (pd.DataFrame): Multi-index DataFrame with top-level columns
+            'BDE' and 'MDL', each containing metric values.
+        metrics (list[str]): List of metric names to compare (e.g. ["Precision", "Recall"]).
+        output_path (str): Directory where the plot will be saved.
+    """
 
     BDE_metrics = df_metrics['BDE'][metrics]
     MDL_metrics = df_metrics['MDL'][metrics]
@@ -82,9 +101,19 @@ def plot_metric_comparison(df_metrics, metrics, output_path):
     plt.show()
 
 
-def plot_parameter_effects(df_metrics_BDE, df_metrics_MDL, cols, output_path):
+def plot_parameter_effects(df_metrics_BDE: pd.DataFrame, df_metrics_MDL: pd.DataFrame,
+                           cols: list[str], output_path: str)->None:
 
-    """Plots the effect of different parameters on Precision metric for BDE and MDL score functions."""
+    """
+    Plots how simulation parameters affect the Precision metric for BDE and MDL.
+
+    Args:
+        df_metrics_BDE (pd.DataFrame): Metrics DataFrame for BDE scoring.
+        df_metrics_MDL (pd.DataFrame): Metrics DataFrame for MDL scoring.
+        cols (list[str]): List of parameter names to visualize
+            (e.g. ["number_of_steps", "frequency"]).
+        output_path (str): Directory where the plot will be saved.
+    """
 
     # Prepare data
     df_metrics_BDE.columns = df_metrics_BDE.columns.droplevel(level=0)
