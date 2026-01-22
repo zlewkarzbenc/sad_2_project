@@ -251,13 +251,13 @@ def precision_recall_f1(G_true: nx.DiGraph, G_pred: nx.DiGraph) -> tuple[float, 
     
 
 def draw_compare_bn(G_true, G_pred, title):
-    G_combined = nx.compose(G_pred, G_true)  # includes all nodes from both
-    pos = nx.spring_layout(G_combined, seed=42)
 
-    nx.draw(G_pred, pos, with_labels=True, node_color="lightblue", arrowsize=20)
-    nx.draw(G_true, pos, with_labels=True, edge_color='green', style='dashed', alpha=0.5)
-
-    plt.title(f"Ground truth edges (green dashed) vs Predicted network (blue) - {title}")
+    nx.draw(G_pred, nx.kamada_kawai_layout(G_pred), with_labels=True, node_color="lightblue", arrowsize=20)
+    plt.title(f"Predicted edges - {title}")
+    plt.show()
+    
+    nx.draw(G_true, nx.kamada_kawai_layout(G_true), with_labels=True, node_color='green', arrowsize=20)
+    plt.title(f"Ground truth edges - {title}")
     plt.show()
 
 
