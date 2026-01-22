@@ -102,22 +102,40 @@ def plot_parameter_effects(df_metrics_BDE, df_metrics_MDL, cols, output_path):
     df_metrics['number_of_steps'] = idx.str.extract(r"_s_(\d+)")
     df_metrics['frequency'] = idx.str.extract(r"_f_(\d+)")
 
+    # to numeric
+    df_metrics['number_of_traj'] = pd.to_numeric(df_metrics['number_of_traj'])
+    df_metrics['number_of_steps'] = pd.to_numeric(df_metrics['number_of_steps'])
+    df_metrics['frequency'] = pd.to_numeric(df_metrics['frequency'])
+
     # Plotting
     fig, axes = plt.subplots(1, len(cols), figsize=(5 * len(cols), 5), sharey=True)
 
     for ax, col in zip(axes, cols):
         data_sort = df_metrics.sort_values(by=col)
-        
+
         sns.violinplot(
             data=data_sort,
             x=col,
             y='Precision',
             inner='quartile',  # show quartiles inside violin
-            hue=col,
             palette='Set2',
-            ax=ax
+            hue=col,
+            ax=ax,
+            legend=False
         )
-
+        
+        # raw data points
+        sns.stripplot(
+            data=data_sort,
+            x=col,
+            y="Precision",           
+            palette='dark:black',
+            hue=col,    
+            alpha=0.4,
+            size=3,
+            ax=ax,
+            jitter=True # spread points so they don’t overlap
+        )
 
         # Prepare data for test
         unique_values = data_sort[col].unique()
@@ -130,11 +148,11 @@ def plot_parameter_effects(df_metrics_BDE, df_metrics_MDL, cols, output_path):
         if len(groups) > 2:
             stat, pval = kruskal(*groups)
             ax.set_title(f'Precision by {col}, Kruskal p={pval:.3f}')
+            ax.legend().remove()
             
         else:
             stat, pval = wilcoxon(groups[0], groups[1])
             ax.set_title(f'Precision by {col}, Wilcoxon p={pval:.3f}')
-            #ax.legend().remove()
             
         ax.set_xlabel(col)
         ax.set_ylabel('Precision')
