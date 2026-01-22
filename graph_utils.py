@@ -4,9 +4,23 @@ import networkx as nx
 import numpy as np
 from sklearn.metrics import precision_score, recall_score, f1_score
 
+"""
+Utility functions for working with graph structures in Boolean Network
+reconstruction experiments. Computing similarity metrics between predicted and true networks.
+"""
 
 def sif_to_nx(sif_file: str) -> nx.DiGraph:
-    "Changing a SIF file into a NetworkX DiGraph."
+    """
+    Converts a BNFinder SIF file into a NetworkX directed graph.
+
+    Args:
+        sif_file (str): Path to the SIF file containing edges in the format:
+            source <relation> target
+
+    Returns:
+        nx.DiGraph: Directed graph representing the network structure.
+    """
+
 
     G = nx.DiGraph()
     with open(sif_file) as f:
@@ -20,8 +34,18 @@ def sif_to_nx(sif_file: str) -> nx.DiGraph:
 
 
 def jaccard_index(G_true: nx.DiGraph, G_pred: nx.DiGraph) -> float:
-    """Calculates the Jaccard Index between the edge sets of two graphs.
-    It is a fraction of correctly predicted edges"""
+    """
+    Computes the Jaccard Index between the edge sets of two directed graphs.
+    It is a fraction of correctly predicted edges
+
+    Args:
+        G_true (nx.DiGraph): Ground-truth network.
+        G_pred (nx.DiGraph): Predicted network.
+
+    Returns:
+        float: Jaccard similarity score between 0 and 1.
+    """
+
 
     E_true = set(G_true.edges())
     E_pred = set(G_pred.edges())
@@ -30,7 +54,16 @@ def jaccard_index(G_true: nx.DiGraph, G_pred: nx.DiGraph) -> float:
 
 
 def precision_recall_f1(G_true: nx.DiGraph, G_pred: nx.DiGraph) -> tuple[float, float, float]:
-    """Calculates precision, recall, and F1-score between the edge sets of two graphs"""
+    """
+    Calculates precision, recall, and F1-score between the edge sets of two graphs.
+    Args:
+        G_true (nx.DiGraph): Ground-truth network.
+        G_pred (nx.DiGraph): Predicted network.
+
+    Returns:
+        tuple[float, float, float]: Precision, recall, and F1-score.
+
+    """
     nodes = list(G_true.nodes())
 
     A_true = nx.to_numpy_array(G_true, nodelist=nodes)
