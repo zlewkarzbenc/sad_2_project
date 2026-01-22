@@ -16,11 +16,12 @@ def plot_attractor_histogram(metadata_path, output_path):
     plt.ylabel('Count')
     plt.title('Atractor ratio in trajectories')
     plt.tight_layout()
-    plt.show()
     
     filename = "attractor_histogram.png"
     os.makedirs(output_path, exist_ok=True)
     plt.savefig(os.path.join(output_path, filename))
+
+    plt.show()
 
 
 def plot_metric_comparison(df_metrics, metrics, output_path):
@@ -73,11 +74,12 @@ def plot_metric_comparison(df_metrics, metrics, output_path):
     plt.title("Comparison of metrics between DataFrames")
     plt.legend(title='Score function', bbox_to_anchor=(1.15, 1))
     plt.tight_layout()
-    plt.show()
 
     filename = "metric_comparison.png"
     os.makedirs(output_path, exist_ok=True)
     plt.savefig(os.path.join(output_path, filename))
+
+    plt.show()
 
 
 def plot_parameter_effects(df_metrics_BDE, df_metrics_MDL, cols, output_path):
@@ -99,8 +101,6 @@ def plot_parameter_effects(df_metrics_BDE, df_metrics_MDL, cols, output_path):
     df_metrics['number_of_traj'] = idx.str.extract(r"_t_(\d+)")
     df_metrics['number_of_steps'] = idx.str.extract(r"_s_(\d+)")
     df_metrics['frequency'] = idx.str.extract(r"_f_(\d+)")
-
-    cols.append('mode')
 
     # Plotting
     fig, axes = plt.subplots(1, len(cols), figsize=(5 * len(cols), 5), sharey=True)
@@ -134,14 +134,15 @@ def plot_parameter_effects(df_metrics_BDE, df_metrics_MDL, cols, output_path):
         else:
             stat, pval = wilcoxon(groups[0], groups[1])
             ax.set_title(f'Precision by {col}, Wilcoxon p={pval:.3f}')
-            ax.legend().remove()
+            #ax.legend().remove()
             
         ax.set_xlabel(col)
         ax.set_ylabel('Precision')
     
     plt.tight_layout()
-    plt.show()
 
     filename = "parameter_effects.png"
     os.makedirs(output_path, exist_ok=True)
     plt.savefig(os.path.join(output_path, filename))
+
+    plt.show()
