@@ -3,10 +3,10 @@ BNfinder-2.0.4/*
 __pycache__/*
 
 # to ewentualnie można wywalić
-input_for_bnfinder/
-output_model/
-output_bnf_MDL/
-output_bnf_BDE/
+#input_for_bnfinder/
+#output_model/
+#output_bnf_MDL/
+#output_bnf_BDE/
 
-metadata_nets.csv
-bnf_metrics.csv
+#metadata_nets.csv
+#bnf_metrics.csv
